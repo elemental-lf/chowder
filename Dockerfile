@@ -5,20 +5,20 @@ FROM centos:7 AS build_clamav
 
 ARG CLAMAV_VERSION=0.101.1
 
-RUN yum update -y && \
-    yum install -y gcc gcc-c++ openssl-devel wget make
+RUN yum update -q -y && \
+    yum install -q -y gcc gcc-c++ openssl-devel pcre2-devel bzip2-devel libxml2-devel wget make
 
-RUN wget https://www.clamav.net/downloads/production/clamav-${CLAMAV_VERSION}.tar.gz && \
-    tar xvzf clamav-${CLAMAV_VERSION}.tar.gz && \
+RUN wget -q -t 5 -T 99999 https://www.clamav.net/downloads/production/clamav-${CLAMAV_VERSION}.tar.gz && \
+    tar xzf clamav-${CLAMAV_VERSION}.tar.gz && \
     cd clamav-${CLAMAV_VERSION} && \
-    ./configure && \
-    make && make install
+    ./configure -q && \
+    make -s && make -s install
 
 # Initial update of AV databases
 RUN mkdir -p /var/lib/clamav && \
-    wget -t 5 -T 99999 -O /var/lib/clamav/main.cvd http://database.clamav.net/main.cvd && \
-    wget -t 5 -T 99999 -O /var/lib/clamav/daily.cvd http://database.clamav.net/daily.cvd && \
-    wget -t 5 -T 99999 -O /var/lib/clamav/bytecode.cvd http://database.clamav.net/bytecode.cvd
+    wget -q -t 5 -T 99999 -O /var/lib/clamav/main.cvd http://database.clamav.net/main.cvd && \
+    wget -q -t 5 -T 99999 -O /var/lib/clamav/daily.cvd http://database.clamav.net/daily.cvd && \
+    wget -q -t 5 -T 99999 -O /var/lib/clamav/bytecode.cvd http://database.clamav.net/bytecode.cvd
 
 #
 # Build ClamAV Java Client
@@ -43,10 +43,10 @@ FROM centos:7 AS run
 ARG CELERY_VERSION=4.2.1
 ARG BOTO3_VERSION=1.9.91
 
-RUN yum update -y && \
-    yum install -y epel-release && \
-    yum install -y openssl java-1.8.0-openjdk curl python36 && \
-    yum clean all && \
+RUN yum update -q -y && \
+    yum install -q -y epel-release && \
+    yum install -q -y openssl pcre2 bzip2 libxml2 java-1.8.0-openjdk curl python36 && \
+    yum clean -y all && \
     python36 -m ensurepip && \
     python36 -m pip install "celery==${CELERY_VERSION}" "boto3==${BOTO3_VERSION}"
 
