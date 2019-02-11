@@ -30,6 +30,7 @@ install:
 
 before_script:
   - pip freeze
+  - 'cd tests; docker-compose up --detach'
 
 script:
   - python -m unittest discover -v -s tests
