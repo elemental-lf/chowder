@@ -30,10 +30,10 @@ install:
 
 before_script:
   - pip freeze
-  - 'cd tests; docker-compose up --detach'
+  - '(cd tests; docker-compose up --detach)'
 
 script:
-  - python -m unittest discover -v -s tests
+  - PYTHONPATH=./celery-worker python -m unittest discover -v -s tests
 
 after_success:
   - 'docker images | grep elementalnet'
