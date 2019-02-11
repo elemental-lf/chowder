@@ -23,9 +23,15 @@ def _create_s3_resource(resource_config: Dict, disable_encoding_type: bool):
 
     return session.resource('s3', **my_resource_config)
 
+
 @app.task(bind=True)
-def scan_s3_object(self, resource_config: Dict, bucket: str, key: str, disable_encoding_type: bool = False,
-                   timeout: int=3600, clamscan_options: Dict[str, str]=None):
+def scan_s3_object(self,
+                   resource_config: Dict,
+                   bucket: str,
+                   key: str,
+                   disable_encoding_type: bool = False,
+                   timeout: int = 3600,
+                   clamscan_options: Dict[str, str] = None):
     if clamscan_options is None:
         clamscan_options = {}
     if 'max-filesize' not in clamscan_options:
@@ -47,18 +53,23 @@ def scan_s3_object(self, resource_config: Dict, bucket: str, key: str, disable_e
         raise RuntimeError(f'S3 GET operation failed: {str(exception)}')
 
     clamscan_invocation = ['clamscan']
-    clamscan_invocation.extend([('--' if len(option_name) > 1 else '-') +
-                                 option_name +
-                                 ('=' if option_value is not None else '') +
-                                 (str(option_value) if option_value is not None else '')
-                                  for option_name, option_value in clamscan_options.items()])
+    clamscan_invocation.extend(
+        [('--' if len(option_name) > 1 else '-') + option_name + ('=' if option_value is not None else '') +
+         (str(option_value) if option_value is not None else '')
+         for option_name, option_value in clamscan_options.items()])
     clamscan_invocation.append(temp_file)
 
     print(clamscan_invocation)
 
     try:
-        result = subprocess.run(clamscan_invocation, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT, encoding='utf-8', errors='ignore', timeout=timeout)
+        result = subprocess.run(
+            clamscan_invocation,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            encoding='utf-8',
+            errors='ignore',
+            timeout=timeout)
     except Exception as exception:
         raise RuntimeError(f'clamscan subprocess failed: {str(exception)}')
     finally:
@@ -74,4 +85,5 @@ def scan_s3_object(self, resource_config: Dict, bucket: str, key: str, disable_e
         # Virus found
         return True, result_output
     else:
-        raise RuntimeError(f'clamscan invocation failed with return code {result.returncode} and output: ' + result_output.replace('\n', ', '))
+        raise RuntimeError(f'clamscan invocation failed with return code {result.returncode} and output: ' +
+                           result_output.replace('\n', ', '))
