@@ -1,0 +1,38 @@
+dist: xenial
+language: python
+
+services:
+  - docker
+
+python:
+  - 3.6
+
+branches:
+  only:
+    - master
+
+cache:
+  - pip
+
+before_install:
+  - uname -a
+  - lsb_release -a
+  - printenv
+  - virtualenv --version
+  - python --version
+  - docker version
+  - travis_retry pip install --upgrade setuptools
+  - travis_retry pip install --upgrade pip
+
+install:
+  - travis_retry pip install boto3 celery
+  - docker build --tag elementalnet/chowder:latest .
+
+before_script:
+  - pip freeze
+
+script:
+  - python -m unittest discover -v -s tests
+
+after_success:
+  - 'docker images | grep elementalnet'

@@ -1,0 +1,8 @@
+[submodule "vendor/github.com/solita/clamav-rest"]
+	path = vendor/github.com/solita/clamav-rest
+	url = https://github.com/solita/clamav-rest
+	branch = master
+[submodule "vendor/github.com/solita/clamav-java"]
+	path = vendor/github.com/solita/clamav-java
+	url = https://github.com/solita/clamav-java
+	branch = master
