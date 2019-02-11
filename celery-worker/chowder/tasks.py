@@ -47,7 +47,10 @@ def scan_s3_object(self, resource_config: Dict, bucket: str, key: str, disable_e
         raise RuntimeError(f'S3 GET operation failed: {str(exception)}')
 
     clamscan_invocation = ['clamscan']
-    clamscan_invocation.extend([option_name + '=' if option_value is not None else '' + str(option_value) if option_value is not None else ''
+    clamscan_invocation.extend([('--' if len(option_name) > 1 else '-') +
+                                 option_name +
+                                 ('=' if option_value is not None else '') +
+                                 (str(option_value) if option_value is not None else '')
                                   for option_name, option_value in clamscan_options.items()])
     clamscan_invocation.append(temp_file)
 
@@ -71,4 +74,4 @@ def scan_s3_object(self, resource_config: Dict, bucket: str, key: str, disable_e
         # Virus found
         return True, result_output
     else:
-        raise RuntimeError(f'clamscan invocation failed with return code {result.returncode}.')
+        raise RuntimeError(f'clamscan invocation failed with return code {result.returncode} and output: ' + result_output.replace('\n', ', '))
