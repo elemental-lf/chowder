@@ -1,0 +1,21 @@
+{{- if .Values.services.clamd.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "chowder.fullname" . }}-clamd
+  labels:
+    app.kubernetes.io/name: {{ include "chowder.name" . }}
+    helm.sh/chart: {{ include "chowder.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  type: {{ .Values.services.clamd.type }}
+  ports:
+    - port: {{ .Values.services.clamd.port }}
+      targetPort: clamd
+      protocol: TCP
+      name: clamd
+  selector:
+    app.kubernetes.io/name: {{ include "chowder.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

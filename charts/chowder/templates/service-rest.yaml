@@ -1,0 +1,21 @@
+{{- if .Values.services.rest.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "chowder.fullname" . }}-rest
+  labels:
+    app.kubernetes.io/name: {{ include "chowder.name" . }}
+    helm.sh/chart: {{ include "chowder.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  type: {{ .Values.services.rest.type }}
+  ports:
+    - port: {{ .Values.services.rest.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "chowder.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
