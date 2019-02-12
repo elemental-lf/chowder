@@ -27,7 +27,7 @@ if [[ $COMMIT_MSG ]]; then
 	cd "$REPO_ROOT"
 elif [[ $TRAVIS_COMMIT_MESSAGE ]]; then
 	# Travis CI
-	DOCKER_REPO="$(cd $(dirnaame $DOCKERFILE_PATH) && pwd)"
+	DOCKER_REPO="$(cd $(dirname $DOCKERFILE_PATH) && pwd)"
 	DOCKER_REPO="elementalnet/${DOCKER_REPO##*/}"
 	SOURCE_BRANCH="$TRAVIS_BRANCH"
 
