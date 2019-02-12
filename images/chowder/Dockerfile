@@ -68,11 +68,13 @@ ADD --chown=clamav:clamav ./healthcheck-*.sh /
 
 # Tini
 ARG TINI_VERSION=v0.18.0
+ADD images/chowder/tini-pgp-key-0527A9B7.txt /tini-pgp-key-0527A9B7.txt
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini.asc /tini.asc
-RUN gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 595E85A6B1B4779EA4DAAEC70B588DFF0527A9B7 && \
+RUN gpg --import /tini-pgp-key-0527A9B7.txt && \
         gpg --verify /tini.asc && \
-        chmod a+x /tini
+        chmod a+x /tini && \
+        rm -f /tini-pgp-key-0527A9B7.txt /tini.asc
 
 ADD celery-worker/ /celery-worker/
 ADD docker-entrypoint.sh /
