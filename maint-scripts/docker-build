@@ -40,7 +40,6 @@ elif [[ $TRAVIS_COMMIT_MESSAGE ]]; then
 		TAG="$SOURCE_BRANCH"
 	fi
 	IMAGE_NAME="$DOCKER_REPO:$TAG"
-	export DOCKER_REPO IMAGE_NAME SOURCE_BRANCH
 else
 	# Local
 	SOURCE_BRANCH="$(git symbolic-ref --short HEAD)"
@@ -56,11 +55,10 @@ else
 		TAG="$SOURCE_BRANCH"
 	fi
 	IMAGE_NAME="$DOCKER_REPO:$TAG"
-	export DOCKER_REPO IMAGE_NAME SOURCE_BRANCH
 fi
 
 # BASE_TAG is only used by derived images
-exec docker build \
+docker build \
   --build-arg BASE_TAG="$BASE_TAG" \
   --build-arg VCS_REF="$(git rev-parse --short HEAD)" \
   --build-arg BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
@@ -69,7 +67,7 @@ exec docker build \
   -f $DOCKERFILE_PATH \
   -t $IMAGE_NAME .
 
-# Do this here instead of post push
+# Do this here instead of in post push
 # Docker Cloud will push $IMAGE_NAME automatically after this
 if [[ $VERSION =~ ^[0-9]+\.[0-9]+.[0-9]+$ ]]; then
 	docker tag $IMAGE_NAME "$DOCKER_REPO:$VERSION"
