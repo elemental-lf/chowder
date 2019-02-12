@@ -1,6 +1,10 @@
 dist: xenial
 language: python
 
+env:
+  - secure: 'vX3mp4LvEKE7yQZw+e/JSTyU3Bq/RIs2dVKDP1ffvmHSm1n8CYI1ZUYKw0oXRdbeKf8/aoB6l+v9YmiHNGfU8CXwHQQ8cnG+hd8RK5912OPKthPYE3PWHpNSM39mo9A02uWIUQYWEPi7OHys7M3cW2MZb4zqm7IpnytIz1rflbvY6+gY/8nnHKj0f6OPrzTSjt6Zb42orB49XkYMcN6auX4BNQvLZ83UFZ4083Vq20Sa8BlzZw894w9H1a2QmPZOgiaBPx/eFtEL1IwpCKvv2MezjAi7sId3bA+gw+/NlNdaLkdA3m6w4y7apq4ZAVBpuj7ZErG0oItPNK7obERBBriODH5Lm8KlZjzfCgWL/KfRiBiYQTlQ0+evo0d4jV484TbLzsi8EQoIXkc4Ty8msOjWzpRULwS6Ar6RmDqMo1lTp5yvPWXQQYcHY5dSn+/oGcZ3Z6Ho50Yj7bwY1wosMORR6+FMg8JL4U/Op4N48De9dps0WclB0DrWfinm8z0SPE5lNfGDEMCWwmJAXAzYcDEir07Of0XvyxHGMTuSq0woHmSTP4hso2IQMJiDJwAXcOT6vQhXgTb19YLnM3E6IYtoN5lS6+lyz9L+n2aI2hx4It0cl4O2AKIs2hhuKpU7/6T5G3d5tRzV/x+kJ5HHoLCed3Bs2q4yKwkalExz+UY='
+  - secure: 'hPam8QsfKreEszcqFjkOcGNAIRfgZFffkn1wOP+L9v0wlZwOdegGNz8snevUFqPHbQuW06vJbSRTwS5Grypetg47hN1p5uGeRrQXmVxJxyzvQjxF4B7XhkYQYhJ91552e6l3czj5wO+fCCQAB6mUgLj25pIIfgFV+95CkREHtSQvM0+QNW3Kjj2bvYBwK+VzP8RIaxtMff7yZ/ehm73n8mgnPi85EfIlDLzcAXvUyyYqE8tilHx7EG9hUgqcl8dtbcgQbnbbMrcyZyUKf1nPMxSBm3q0TivHZZE/5RTSKkwlfVz4/8wQ27qmHlV3CHlfgCNqKMWPGu4HGnyssuqfXWL4XEokjabWB/HRc15V2te6ZA6d3pq9PkDHsxIx4/0Ye4h5nfLOyPQd3Pl8byQHh7RnQhuM1d640k+2pJqIK8ExAVypgEFd22kcIdmYyIFBvSHQP3DyAg3uTml8SRdGpsBjjUfdj5dxHPJiHyKeF6RLzO0z/AFtjNBxxxpYW+/VHeSPWyWVr9qRq59699Bj75DlL7Dzvn2tAFz0Vh742pwwm08LhLT/hWsEk7tg4QiPHcCjU0XylSvNREw7uCgmMjhAL4iNpzhXN1jXn+wub58XVj9ez/2IDu0mYRATbG2UBAQ/9vOA2sDAMJaMuxw/AUqkT6pKfU4RYOQQHu8J5oA='
+
 services:
   - docker
 
@@ -14,10 +18,13 @@ branches:
 cache:
   - pip
 
+stages:
+  - test
+  - push
+
 before_install:
   - uname -a
   - lsb_release -a
-  - printenv
   - virtualenv --version
   - python --version
   - docker version
@@ -26,14 +33,17 @@ before_install:
 
 install:
   - travis_retry pip install boto3 celery
-  - docker build --tag elementalnet/chowder:latest .
+  - SKIP_DOCKER_PUSH=1 DOCKERFILE_PATH=images/chowder/Dockerfile maint-scripts/docker-build
 
 before_script:
-  - pip freeze
   - '(cd tests; docker-compose up --detach)'
 
 script:
   - PYTHONPATH=./celery-worker python -m unittest discover -v -s tests
 
-after_success:
-  - 'docker images | grep elementalnet'
+jobs:
+  include:
+    - stage: push
+      scripts:
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        - DOCKERFILE_PATH=images/chowder/Dockerfile maint-scripts/docker-build
