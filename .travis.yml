@@ -1,48 +1,42 @@
 dist: xenial
 language: python
 
-env:
-  - secure: 'O5YOLhJpfJj6cQx+0qi0EAzXwhz4P0w8vCUvvmlPxf8qjiXGkAtHR4aVfpCbWm8c20/1+csnzpiUybhqQ3P7bQUxv9aqmrodp+lhNeBuFEcKjhYwLTpfXuAFktsa344KT6EK3S24R9jDYuTih3BRftUmfNQIbBTaZALTV0CKT44rR05iDTH9Q3akZVWejfFqegUSgn47dhzpKWMCBFXnRxR8s9qi2gbkdAwjLNTP+y4KsTyrt5JPFpy1OJjVVI7JD0aLT3DDLFfukFpleF+8lOIGOMrROevTZQ7RwDQV72nFZAE8U033vWZwG4HJ4RrsR0iyBBCoTcS6hJMQsPF8QnMLp+36tY+JzpHc4m651susHIQe59R2KtdGY+f85/AhPy05v3M1hC47PUphaMeiT57eitJmWnI/X7O5qLE311/JO1QrYPPb3754eQbXQZYB5Myht7tTMw65wmAn/geBeDTXceBz7jsSYORuh4OcD/b8le811PSmFAIvQhq+MXoZuVLU7yyrchh+S9q+nv4Rh7MB0FnmHOKFLzcj4kYLLBMSLHMN5cxNTPuybGopF4/ygGjkyc1mC42DAV1+Du8OTvndnB+XF2QUb8Ol1GMNQgKSQGU7LVDqZDhY/D/CutpbuybXeEYKXw2TX1DNJ92CXSk5o7aN+7qbiyylOCI1CJc='
-
 services:
   - docker
-
-python:
-  - 3.6
 
 branches:
   only:
     - master
 
-cache:
-  - pip
-
 stages:
   - test
   - push
 
+python:
+  - 3.6
+
 before_install:
   - uname -a
   - lsb_release -a
-  - virtualenv --version
   - python --version
   - docker version
-  - travis_retry pip install --upgrade setuptools
-  - travis_retry pip install --upgrade pip
-
-install:
-  - travis_retry pip install boto3 celery
-  - SKIP_DOCKER_PUSH=1 DOCKERFILE_PATH=images/chowder/Dockerfile maint-scripts/docker-build
-
-before_script:
-  - '(cd tests; docker-compose up --detach)'
 
 script:
+  - travis_retry pip install --upgrade setuptools pip
+  - travis_retry pip install boto3 celery
+  - SKIP_DOCKER_PUSH=1 DOCKERFILE_PATH=images/chowder/Dockerfile maint-scripts/docker-build
+  - '(cd tests; docker-compose up --detach)'
   - PYTHONPATH=./celery-worker python -m unittest discover -v -s tests
+  - '(cd tests; docker-compose down)'
 
 jobs:
   include:
+    - stage: test
     - stage: push
-      scripts:
-        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+      env:
+        - secure: 'M9UIJRV0k5zf0yZdzxGc2IIY25z/RbrfMMJCdtlq3LXqbtb+/cjBd8Fxfvw0ayJdzvCn4evbtlKo2yk/xiOaJmd9+EBYAz42CeC5uoZmEHjr/4KIZ2Ye9MgUBFq2Hl98X/kjZvXvanDHi2CwNBya+hJVVNxTlVkqfRh4TjOMYGJnBaFVlfYkFoBQWZ1EMaNv8i4bm2nqFA9o9dEFT/UX86q4ia9tOSPesFnU1AYwSYmDZQxLF0AyyL86CMX6/1T7Hrr6bmN3uPe9qsc/TMDj21rXk0fAzL/4WE03UiW7xopO95wXvwLbRE3W5zeMk0O9snQl4QiJgR0CsT5ryxnwsXtlwGbh7RH6JBTh4W7Jf4VxeVO1Od32tZR7V3XmOrlC+QcQU3qBRZPi0mlyEDj4vke0sNdMqgsz+HsWWwa8O+KAMxfjlf8i5W8Z6nCvSMw5vqQdorYNvCX32Ta8k3doJFqfEb44up79kReboOOf2GFjR67vkv+D1bOZINRY/rFG0yci4rvobSa2y7azYt2IgBvMuKEOAdfFW1isvcLosFiHcEyQDz116L6ByJdTCXn5ADyyoF6WZ+HteQHQ+MXppBXisPmpQ/BYV5BCgr/5WngzBDaObOVLgof71O4L6vGSFXzF9MblwO1TAGRTDlO5F+nSiWcsdYmP3F4o8rC/Ua8='
+        - secure: 'YpokG8rQCeLzVZ+uNaz2uNxKnkI374FPZVnj3kUPC5cLyTiQGdL/ltI7YvysKr/N3ajNN0kHiKt3k9F88TyAA7DxHepkyI6VPRXnOFk1RuTBz0fWzXW+8CQh1PMZb3UWE8SqHWb2XRLmd4eM1Zc79iMnTlTFqA+772JcSPsLBjNI0xTN+PPTM1dq8Bw5W4uc7qWRtS8Y8MP7lxpT9lLoiSNClGYd4WtBbrFkMza/9CsqoV8o4dZycRMzB3OBfp2Wn/DwWnxFaQpM0cdM7iSbhPTHcyBcWXqUPXMctiU+ZkuvPrUfCRkWhMmMKbq82aWE4kNGb6STZYRgm6O+c9t66tLqRyoiUdqI86222WMIDWdNEf/0tNntHzOCxf8yWxY5gPyk1gXhBXXQUy27O0pEeNgPUHcNnVV8XhxkS1pqVzzc0YTA6RtDv57hae/5YDR6kdmnG7fq/oqH/wxEec+dYwaT7lcRgL26Q5Z9fP/NgEsmc66V06zq9USuha21N0g3x6fM/wDTtuOLdR58KyyxqFMAmObkG4yntQosjKeqIOy09nWQ/hEv2u4PocXPtEdNTEF5ZvKBj9KaqHjQkNBDuMXBsaQZYEqAnATZQOICbVIGCKZMkUgclYf6EuQ/GoVnZirUgX0PVhLfY7KsmbvtDvSMddtgvo9go13KVb58Scs='
+      install: skip
+      script:
+        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
         - DOCKERFILE_PATH=images/chowder/Dockerfile maint-scripts/docker-build
