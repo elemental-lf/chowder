@@ -25,13 +25,7 @@ def _create_s3_resource(resource_config: Dict, disable_encoding_type: bool):
 
 
 @app.task(bind=True)
-def scan_s3_object(self,
-                   resource_config: Dict,
-                   bucket: str,
-                   key: str,
-                   disable_encoding_type: bool = False,
-                   timeout: int = 3600,
-                   clamscan_options: Dict[str, str] = None):
+def scan_file(self, file: str, timeout: int = 3600, clamscan_options: Dict[str, str] = None, unlink: bool = False):
     if clamscan_options is None:
         clamscan_options = {}
     if 'max-filesize' not in clamscan_options:
@@ -39,27 +33,12 @@ def scan_s3_object(self,
     if 'max-scansize' not in clamscan_options:
         clamscan_options['max-scansize'] = 0
 
-    temp_dir = clamscan_options['tempdir'] if 'tempdir' in clamscan_options else '/tmp'
-    temp_file = '{}/{}'.format(temp_dir, uuid.uuid4().hex)
-    try:
-        s3_resource = _create_s3_resource(resource_config, disable_encoding_type)
-        s3_resource.Object(bucket, key).download_file(temp_file)
-    except Exception as exception:
-        try:
-            os.unlink(temp_file)
-        except FileNotFoundError:
-            pass
-        # Make sure to translate exception into a universally known one
-        raise RuntimeError(f'S3 GET operation failed: {str(exception)}')
-
     clamscan_invocation = ['clamscan']
     clamscan_invocation.extend(
         [('--' if len(option_name) > 1 else '-') + option_name + ('=' if option_value is not None else '') +
          (str(option_value) if option_value is not None else '')
          for option_name, option_value in clamscan_options.items()])
-    clamscan_invocation.append(temp_file)
-
-    print(clamscan_invocation)
+    clamscan_invocation.append(file)
 
     try:
         result = subprocess.run(
@@ -73,10 +52,11 @@ def scan_s3_object(self,
     except Exception as exception:
         raise RuntimeError(f'clamscan subprocess failed: {str(exception)}')
     finally:
-        os.unlink(temp_file)
+        if unlink:
+            os.unlink(file)
 
-    # Remove temporary filename from output
-    result_output = result.stdout.replace(temp_file + ': ', '')
+    # Remove filename from output
+    result_output = result.stdout.replace(file + ': ', '')
 
     if result.returncode == 0:
         # No virus found
@@ -87,3 +67,29 @@ def scan_s3_object(self,
     else:
         raise RuntimeError(f'clamscan invocation failed with return code {result.returncode} and output: ' +
                            result_output.replace('\n', ', '))
+
+
+@app.task(bind=True)
+def scan_s3_object(self,
+                   resource_config: Dict,
+                   bucket: str,
+                   key: str,
+                   disable_encoding_type: bool = False,
+                   timeout: int = 3600,
+                   clamscan_options: Dict[str, str] = None):
+    if clamscan_options is None:
+        clamscan_options = {}
+    temp_dir = clamscan_options['tempdir'] if 'tempdir' in clamscan_options else '/tmp'
+    temp_file = '{}/{}'.format(temp_dir, uuid.uuid4().hex)
+    try:
+        s3_resource = _create_s3_resource(resource_config, disable_encoding_type)
+        s3_resource.Object(bucket, key).download_file(temp_file)
+    except Exception as exception:
+        try:
+            os.unlink(temp_file)
+        except FileNotFoundError:
+            pass
+        # Make sure to translate exception into a universally known one
+        raise RuntimeError(f'S3 GET operation failed: {str(exception)}')
+
+    return scan_file(temp_file, timeout=timeout, clamscan_options=clamscan_options, unlink=True)
