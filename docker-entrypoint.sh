@@ -49,7 +49,7 @@ case $COMMAND in
         cd /clamav-rest
         exec /tini -- /usr/bin/java -jar clamav-rest-*.jar \
                         --clamd.host=127.0.0.1 --clamd.port=3310 \
-                        --clamd.maxfilesize=4096MB --clamd.maxrequestsize=4096MB
+                        --clamd.maxfilesize=4000MB --clamd.maxrequestsize=4000MB
     ;;
     celery-worker)
         export PYTHONPATH=/celery-worker/lib
