@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-set -e
 if freshclam | grep -q 'bytecode.* is up to date'; then
     echo 'SUCCESS: freshclam running successfully'
     exit 0

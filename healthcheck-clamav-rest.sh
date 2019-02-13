@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 STATUSCODE=$(curl -L --silent --output /dev/null --write-out "%{http_code}" 127.0.0.1:8080)
 
