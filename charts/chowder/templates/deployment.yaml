@@ -21,9 +21,32 @@ spec:
     spec:
       securityContext:
         fsGroup: 1000
+      initContainers:
+        - name: copy-av-databases
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+              - "cp"
+              - "-rv"
+              - "/var/lib/clamav/."
+              - "/var/lib/clamav-empty-dir/"
+          env:
+            - name: POD_NAME
+              valueFrom:
+                  fieldRef:
+                      fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                  fieldRef:
+                      fieldPath: metadata.namespace
+          volumeMounts:
+            - mountPath: /var/lib/clamav-empty-dir
+              name: var-lib-clamav
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
       containers:
 {{- if .Values.containers.clamd.enabled }}
-        - name: {{ .Chart.Name }}-clamd
+        - name: clamd
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
@@ -60,11 +83,14 @@ spec:
           volumeMounts:
             - mountPath: /var/run/clamav
               name: var-run-clamav
+            - mountPath: /var/lib/clamav
+              name: var-lib-clamav
+              readOnly: true
           resources:
 {{ toYaml .Values.resources | indent 12 }}
 {{- end }}
 {{- if .Values.containers.freshclam.enabled }}
-        - name: {{ .Chart.Name }}-freshclam
+        - name: freshclam
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
@@ -89,11 +115,13 @@ spec:
           volumeMounts:
             - mountPath: /var/run/clamav
               name: var-run-clamav
+            - mountPath: /var/lib/clamav
+              name: var-lib-clamav
           resources:
 {{ toYaml .Values.resources | indent 12 }}
 {{- end }}
 {{- if .Values.containers.celeryWorker.enabled }}
-        - name: {{ .Chart.Name }}-celery-worker
+        - name: celery-worker
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
@@ -122,13 +150,16 @@ spec:
           volumeMounts:
             - mountPath: /var/run/clamav
               name: var-run-clamav
+            - mountPath: /var/lib/clamav
+              name: var-lib-clamav
+              readOnly: true
             - mountPath: /celery-worker/config
               name: celery-worker
           resources:
 {{ toYaml .Values.resources | indent 12 }}
 {{- end }}
 {{- if .Values.containers.rest.enabled }}
-        - name: {{ .Chart.Name }}-rest
+        - name: rest
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
@@ -162,9 +193,6 @@ spec:
                 valueFrom:
                     fieldRef:
                         fieldPath: metadata.namespace
-          volumeMounts:
-            - mountPath: /var/run/clamav
-              name: var-run-clamav
           resources:
 {{ toYaml .Values.resources | indent 12 }}
 {{- end }}
@@ -173,6 +201,8 @@ spec:
           configMap:
             name: {{ include "chowder.fullname" . }}-celery-worker
         - name: var-run-clamav
+          emptyDir: {}
+        - name: var-lib-clamav
           emptyDir: {}
     {{- with .Values.nodeSelector }}
       nodeSelector:
