@@ -21,10 +21,11 @@ before_install:
   - python --version
   - docker version
 
-script:
+install:
   - travis_retry pip install --upgrade setuptools pip
   - travis_retry pip install boto3 celery
-  - SKIP_DOCKER_PUSH=1 DOCKERFILE_PATH=images/chowder/Dockerfile maint-scripts/docker-build
+
+script:
   - '(cd tests; docker-compose up --detach)'
   - PYTHONPATH=./celery-worker python -m unittest discover -v -s tests
   - '(cd tests; docker-compose down)'
@@ -32,6 +33,10 @@ script:
 jobs:
   include:
     - stage: test
+      install:
+        - travis_retry pip install --upgrade setuptools pip
+      script:
+        - SKIP_DOCKER_PUSH=1 DOCKERFILE_PATH=images/chowder/Dockerfile maint-scripts/docker-build
     - stage: push
       env:
         - secure: 'M9UIJRV0k5zf0yZdzxGc2IIY25z/RbrfMMJCdtlq3LXqbtb+/cjBd8Fxfvw0ayJdzvCn4evbtlKo2yk/xiOaJmd9+EBYAz42CeC5uoZmEHjr/4KIZ2Ye9MgUBFq2Hl98X/kjZvXvanDHi2CwNBya+hJVVNxTlVkqfRh4TjOMYGJnBaFVlfYkFoBQWZ1EMaNv8i4bm2nqFA9o9dEFT/UX86q4ia9tOSPesFnU1AYwSYmDZQxLF0AyyL86CMX6/1T7Hrr6bmN3uPe9qsc/TMDj21rXk0fAzL/4WE03UiW7xopO95wXvwLbRE3W5zeMk0O9snQl4QiJgR0CsT5ryxnwsXtlwGbh7RH6JBTh4W7Jf4VxeVO1Od32tZR7V3XmOrlC+QcQU3qBRZPi0mlyEDj4vke0sNdMqgsz+HsWWwa8O+KAMxfjlf8i5W8Z6nCvSMw5vqQdorYNvCX32Ta8k3doJFqfEb44up79kReboOOf2GFjR67vkv+D1bOZINRY/rFG0yci4rvobSa2y7azYt2IgBvMuKEOAdfFW1isvcLosFiHcEyQDz116L6ByJdTCXn5ADyyoF6WZ+HteQHQ+MXppBXisPmpQ/BYV5BCgr/5WngzBDaObOVLgof71O4L6vGSFXzF9MblwO1TAGRTDlO5F+nSiWcsdYmP3F4o8rC/Ua8='
