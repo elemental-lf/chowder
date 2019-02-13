@@ -3,7 +3,7 @@ replicaCount: 5
 image:
   repository: elementalnet/chowder
   tag: latest
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 nameOverride: ""
 fullnameOverride: ""
