@@ -55,7 +55,7 @@ COPY --from=build_clamav /var/lib/clamav/ /var/lib/clamav/
 COPY --from=build_clamav_rest /target/clamav-rest-*.jar /clamav-rest/
 
 # Add clamav user
-RUN groupadd -r clamav && \
+RUN groupadd -r -g 1000 clamav && \
     useradd -r -g clamav -u 1000 clamav -d /var/lib/clamav && \
     mkdir -p /var/lib/clamav /usr/local/share/clamav /var/run/clamav && \
     chmod 750 /var/run/clamav && \
