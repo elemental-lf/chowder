@@ -52,7 +52,7 @@ case $COMMAND in
                         --clamd.maxfilesize=4096MB --clamd.maxrequestsize=4096MB
     ;;
     celery-worker)
-        export PYTHONPATH=/celery-worker
+        export PYTHONPATH=/celery-worker/lib
         exec /tini -- /usr/local/bin/celery worker --loglevel=INFO --task-events \
                         --concurrency=1 -n "${POD_NAME:-%h}" -A chowder
     ;;

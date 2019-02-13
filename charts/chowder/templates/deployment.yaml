@@ -24,6 +24,8 @@ spec:
         - name: {{ .Chart.Name }}-clamd
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - clamd
           ports:
             - name: clamd
               containerPort: 3310
@@ -44,6 +46,15 @@ spec:
             timeoutSeconds: 10
             periodSeconds: 30
             failureThreshold: 3
+          env:
+              - name: POD_NAME
+                valueFrom:
+                    fieldRef:
+                        fieldPath: metadata.name
+              - name: POD_NAMESPACE
+                valueFrom:
+                    fieldRef:
+                        fieldPath: metadata.namespace
           resources:
 {{ toYaml .Values.resources | indent 12 }}
 {{- end }}
@@ -51,6 +62,8 @@ spec:
         - name: {{ .Chart.Name }}-freshclam
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+              - freshclam
           livenessProbe:
             exec:
               command:
@@ -59,6 +72,15 @@ spec:
             timeoutSeconds: 10
             periodSeconds: 30
             failureThreshold: 3
+          env:
+              - name: POD_NAME
+                valueFrom:
+                    fieldRef:
+                        fieldPath: metadata.name
+              - name: POD_NAMESPACE
+                valueFrom:
+                    fieldRef:
+                        fieldPath: metadata.namespace
           resources:
 {{ toYaml .Values.resources | indent 12 }}
 {{- end }}
@@ -66,6 +88,8 @@ spec:
         - name: {{ .Chart.Name }}-celery-worker
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+              - celery-worker
           ports:
             - name: clamd
               containerPort: 3310
@@ -78,6 +102,18 @@ spec:
             timeoutSeconds: 10
             periodSeconds: 30
             failureThreshold: 3
+          env:
+            - name: POD_NAME
+              valueFrom:
+                  fieldRef:
+                      fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                  fieldRef:
+                      fieldPath: metadata.namespace
+          volumeMounts:
+            - mountPath: /celery-worker/config
+              name: celery-worker
           resources:
 {{ toYaml .Values.resources | indent 12 }}
 {{- end }}
@@ -85,6 +121,8 @@ spec:
         - name: {{ .Chart.Name }}-rest
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+              - rest
           ports:
             - name: http
               containerPort: 8080
@@ -105,9 +143,22 @@ spec:
             timeoutSeconds: 10
             periodSeconds: 30
             failureThreshold: 3
+          env:
+              - name: POD_NAME
+                valueFrom:
+                    fieldRef:
+                        fieldPath: metadata.name
+              - name: POD_NAMESPACE
+                valueFrom:
+                    fieldRef:
+                        fieldPath: metadata.namespace
           resources:
 {{ toYaml .Values.resources | indent 12 }}
 {{- end }}
+      volumes:
+        - name: celery-worker
+          configMap:
+            name: {{ include "chowder.fullname" . }}-celery-worker
     {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}

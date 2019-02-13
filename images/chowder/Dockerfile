@@ -76,7 +76,10 @@ RUN gpg --import /tini-pgp-key-0527A9B7.txt && \
         chmod a+x /tini && \
         rm -f /tini-pgp-key-0527A9B7.txt /tini.asc
 
-ADD celery-worker/ /celery-worker/
+ADD celery-worker/ /celery-worker/lib
+RUN mkdir /celery-worker/config && \
+    mv /celery-worker/lib/chowder/celeryconfig.py /celery-worker/config && \
+    ln -s ../../config/celeryconfig.py /celery-worker/lib/chowder/celeryconfig.py
 ADD docker-entrypoint.sh /
 
 USER 1000

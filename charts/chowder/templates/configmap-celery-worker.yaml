@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "chowder.fullname" . }}-celery-worker
+  labels:
+    app.kubernetes.io/name: {{ include "chowder.name" . }}
+    helm.sh/chart: {{ include "chowder.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  celeryconfig.py: |
+    {{- .Values.containers.celeryWorker.config | nindent 4 }}
