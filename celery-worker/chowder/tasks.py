@@ -15,7 +15,8 @@ app.config_from_object('chowder.celeryconfig')
 
 def _create_s3_resource(resource_config: Dict, disable_encoding_type: bool):
     my_resource_config = deepcopy(resource_config)
-    my_resource_config['config'] = BotoCoreClientConfig(**my_resource_config['config'])
+    if 'config' in my_resource_config:
+        my_resource_config['config'] = BotoCoreClientConfig(**my_resource_config['config'])
 
     session = boto3.session.Session()
     if disable_encoding_type:
