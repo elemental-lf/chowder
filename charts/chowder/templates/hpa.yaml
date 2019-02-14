@@ -1,0 +1,19 @@
+{{- if .Values.horizontalPodAutoscaler.enabled }}
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+    name: {{ include "chowder.fullname" . }}
+    labels:
+        app.kubernetes.io/name: {{ include "chowder.name" . }}
+        helm.sh/chart: {{ include "chowder.chart" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+    maxReplicas: {{ .Values.horizontalPodAutoscaler.maxReplicas }}
+    minReplicas: {{ .Values.horizontalPodAutoscaler.minReplicas }}
+    scaleTargetRef:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: {{ include "chowder.fullname" . }}
+    targetCPUUtilizationPercentage: {{ .Values.horizontalPodAutoscaler.targetCPUUtilizationPercentage }}
+{{- end}}
