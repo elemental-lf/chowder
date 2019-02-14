@@ -155,6 +155,10 @@ spec:
               readOnly: true
             - mountPath: /celery-worker/config
               name: celery-worker
+{{- if .Values.dataVolume.enabled }}
+            - mountPath: {{ .Values.dataVolume.mountPath }}
+              name: data-volume
+{{- end }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
 {{- end }}
@@ -204,6 +208,10 @@ spec:
           emptyDir: {}
         - name: var-lib-clamav
           emptyDir: {}
+{{- if .Values.dataVolume.enabled }}
+        - name: data-volume
+{{ toYaml .Values.dataVolume.reference | indent 10 }}
+{{- end }}
     {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}

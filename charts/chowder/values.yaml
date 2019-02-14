@@ -32,6 +32,14 @@ services:
     type: ClusterIP
     port: 3310
 
+dataVolume:
+  enabled: false
+  # Mount path inside the Celery worker container
+  mountPath: /data
+  reference:
+    persistentVolumeClaim:
+      claimName: your-pvc
+
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
