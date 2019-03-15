@@ -40,15 +40,15 @@ RUN mvn install -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Sl
 
 FROM centos:7 AS run
 
-ARG CELERY_VERSION=4.2.1
-ARG BOTO3_VERSION=1.9.91
+ADD requirements.txt /tmp/requirements.txt
 
 RUN yum update -q -y && \
     yum install -q -y epel-release && \
     yum install -q -y openssl pcre2 bzip2 libxml2 java-1.8.0-openjdk curl python36 && \
     yum clean -y all && \
     python36 -m ensurepip && \
-    python36 -m pip install "celery==${CELERY_VERSION}" "boto3==${BOTO3_VERSION}"
+    python36 -m pip install -r /tmp/requirements.txt && \
+    rm -f /tmp/requirements.txt
 
 COPY --from=build_clamav /usr/local/ /usr/local/
 COPY --from=build_clamav /var/lib/clamav/ /var/lib/clamav/
