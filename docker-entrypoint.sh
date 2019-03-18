@@ -54,7 +54,7 @@ case $COMMAND in
     celery-worker)
         export PYTHONPATH=/celery-worker/lib
         exec /tini -- /usr/local/bin/celery worker --loglevel=INFO --task-events \
-                        --concurrency=1 -n "${POD_NAME:-%h}" -A chowder
+                        --concurrency=1 -n "${POD_NAME:-%h}" -A celery_chowder
     ;;
     *)
         echo 'Unknown command. Valid commands are "clamd", "freshclam", "rest" and "celery-worker".' 1>&2
