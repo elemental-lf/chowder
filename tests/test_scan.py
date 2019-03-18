@@ -29,7 +29,7 @@ class TestScan(unittest.TestCase):
             pass
 
     def _test_scan(self, local_file, expected_scan_result, expected_scan_message):
-        with open_fs('osfs://..') as source_fs, open_fs(self.FS_URL_HOST) as destination_fs:
+        with open_fs('osfs://.') as source_fs, open_fs(self.FS_URL_HOST) as destination_fs:
             copy_file(source_fs, local_file, destination_fs, self.TEST_FILE)
 
         scan_result, scan_message = scan.delay(fs_url=self.FS_URL, file=self.TEST_FILE).get()
