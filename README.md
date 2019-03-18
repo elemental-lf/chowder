@@ -14,40 +14,27 @@ are four possible modes:
     in the `/var/lib/clamav` directory.
     
 * `celery-worker`: Celery is a distributed task queue framework for Python. In this mode a Celery worker is
-    started which publishes two tasks with the following signature:
+    started which publishes one task with the following signature:
     
-    * `scan_file(file: str, timeout: int = 3600, clamscan_options: Dict[str, str] = None, unlink: bool = False)`
+    `scan(fs: str, file: str, timeout: int = 3600, clamscan_options: Dict[str, str] = None, unlink: bool = False)`
     
-        The parameters for `scan_file` are:
-        
-        * `file`: Name of a file to be scanned
-        * `timeout`: Timeout for the `clamscan` call
-        * `clamscan_options`: This is a dictionary of options that are passed directly `clamscan`. The key of the
-        dictionary items is the option name (without the leading dash or dashes). The value is the argument
-        of the respective option. If an option has no argument the value should be set to `None`.
-        * `unlink`: If this boolean value is set to `True` the file is unlinked after being scanned.
+    The parameters for `scan` are:
     
-    * `scan_s3_object(self, resource_config: Dict, bucket: str, key: str, disable_encoding_type: bool = False,
-       timeout: int = 3600, clamscan_options: Dict[str, str] = None)` 
+    * `fs`: Name of a PyFilesystem URL
+    * `file`: Name of a file to be scanned
+    * `timeout`: Timeout for the `clamscan` call
+    * `clamscan_options`: This is a dictionary of options that are passed directly `clamscan`. The key of the
+    dictionary items is the option name (without the leading dash or dashes). The value is the argument
+    of the respective option. If an option has no argument the value should be set to `None`.
+    * `unlink`: If this boolean value is set to `True` the file is unlinked after being scanned.
     
-        Instead of the `file` parameter `scan_s3_object` takes these two:
-        
-        * `bucket`: Name of an S3 bucket
-        * `key`: Key of the S3 object to be scanned
-        
-        Furthermore there are two options which configure the S3 object to use:
-        
-        * `resource_config`: This dictionary contains key-value arguments supplied to the resource factory of 
-        `boto3.session.Session.resource` 
-        (see [Amazon's documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/core/session.html)).
-        The key `config` of this dictionary can furthermore contain key-value arguments to
-        `botocore.config.Config`'s constructor if further customization is required (see
-         [Amazon's documentation](https://botocore.amazonaws.com/v1/documentation/api/latest/reference/config.html)).
-         See `tests/test_scan_s3_object.py` for an example on how to populate this dictionary. 
-        * `disable_encoding_type`: This is a special option to make Chowder work with Google's S3 API endpoint
-        in some situations. 
-        
-    All files and S3 objects are scanned with `clamscan` to circumvent the 4GB limit of `clamd` and of the REST API
+    The task returns a tuple consisting of a boolean value indicating if a virus was found (`True`) or or
+    (`False`) and a multi-line string containing the output of `clamscan`.
+    
+    Resources are accessed via [PyFilesystem](https://www.pyfilesystem.org/), support for accessing S3 object 
+    stores via [`fs-s3`](https://fs-s3fs.readthedocs.io/) is included.
+    
+    All resources are scanned with `clamscan` to circumvent the 4GB limit of `clamd` and of the REST API
     which also connects to `clamd`. This has the disadvantage that the whole anti-virus pattern database needs to
     be loaded by each invocation of `clamscan` which takes about 20 seconds (on my hardware). Furthermore to scan
     S3 objects they need to be downloaded into the local filesystem in full to be scanned.
@@ -57,11 +44,7 @@ are four possible modes:
     as per the Celery [documentation](http://docs.celeryproject.org/en/latest/userguide/configuration.html). To
     get the results of the scans a results backend is needed.
     
-    Both tasks return a tuple consisting of a boolean value indicating if a virus was found (`True`) or or (`False`)
-    and a multi-line string containing the output of `clamscan`.
-    
-    These tasks need to be called by name. It is possible to use `send_task` for this or to define a `signature` with
-    one of the names above.
+    The task needs to be called by name. It is possible to use `send_task` for this or to define a `signature`.
     
 * `clamd`: This mode starts the `clamd` daemon inside the container. It listens on TCP port 3310 and on the
     Unix domain socket `/var/run/clamav/clamd.sock`. The TCP port can be exposed to the outside world 
@@ -141,13 +124,15 @@ image:
 For scanning files directly a data volume can be mounted into the Celery worker container:
 
 ```yaml
-dataVolume:
-  enabled: false
-  # Mount path inside the Celery worker container
-  mountPath: /data
-  reference:
-    persistentVolumeClaim:
-      claimName: your-pvc
+containers:
+  celeryWorker:
+    dataVolume:
+      enabled: false
+      # Mount path inside the Celery worker container
+      mountPath: /data
+      reference:
+        persistentVolumeClaim:
+          claimName: your-pvc
 ```
 It is possible to specify resources for the containers. Currently all containers get the same resource allocation. This
 might turn out to be suboptimal and separate resource specifications might be needed in the future. A horizontal
