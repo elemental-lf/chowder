@@ -19,6 +19,13 @@ containers:
       broker_url = 'amqp://guest:guest@rabbitmq:5672'
       result_backend = 'rpc://'
       tasks_queues = 'chowder'
+    dataVolume:
+      enabled: false
+      # Mount path inside the Celery worker container
+      mountPath: /data
+      reference:
+        persistentVolumeClaim:
+          claimName: your-pvc
   rest:
     enabled: false
 
@@ -31,14 +38,6 @@ services:
     enabled: false
     type: ClusterIP
     port: 3310
-
-dataVolume:
-  enabled: false
-  # Mount path inside the Celery worker container
-  mountPath: /data
-  reference:
-    persistentVolumeClaim:
-      claimName: your-pvc
 
 resources: {}
   # limits:
